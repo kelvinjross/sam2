@@ -11,6 +11,22 @@ tmp_folder = '/tmp/SAM2/'
 
 
 
+# API endpoint for processing video data
+# This endpoint will receive the video data and process it using SAM2
+# The processed data will be returned as a JSON response    
+#
+# The video data is received as a JSON object with the following fields:    
+# data_src: The source of the video data
+# video_folder: The folder containing the video data
+# video_file: The name of the video file
+# video_extn: The extension of the video file
+# video_fps: The frames per second of the video
+# frame_start: The start frame number
+# frame_end: The end frame number
+# frame_annotation: The annotation for the frame
+#
+# Sample request:
+# curl -X POST -H "Content-Type: application/json" -d '{"data_src": "KJR-DATA-02/Goondoi/Missions/", "video_folder" : "Tour_20241128/DJI_202411300738_001_Goondoi-flights-Innisfail/", "video_file": "DJI_20241130073900_0001_V", "video_extn": "MP4", "video_fps": 29.76, "frame_start": 994, "frame_end": 998, "frame_annotation": {"x1": 106, "y1": 281, "x2": 142, "y2": 294, "width": 737, "height": 415, "type": "rectangle", "tags": ["vessel"], "objectid": "pilot1"}}' http://localhost:3030/sam2 
 
 @app.route('/sam2', methods=['POST'])
 def process_data():
