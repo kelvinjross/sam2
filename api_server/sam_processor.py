@@ -183,6 +183,10 @@ def generate_video_frames_using_ffmeg(src_video_file, video_fps, frame_start, fr
 def get_annotations_from_video_frames(video_dir, frame_annotation, display_frames=False, vis_frame_stride = 5):
     # `video_dir` a directory of JPEG frames with filenames like `<frame_index>.jpg`
     
+        
+    # Initialize the predictor globally
+    predictor = initialize_sam() 
+
     # scan all the JPEG frame names in this directory
     frame_names = [
         p for p in os.listdir(video_dir)
@@ -261,7 +265,7 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
 
     # Reset the predictor as processing is complete
     predictor.reset_state(inference_state)
-    
+
     # Write the annotations dictionary to a JSON file
     output_json_path = os.path.join(video_dir, 'annotations.json')
     try:
@@ -281,7 +285,7 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
 def process_video(data_src, video_folder, video_file, video_extn, video_fps, 
                  frame_start, frame_end, frame_annotation, gva_src, tmp_folder):
     """Main function to process video and generate annotations"""
-    
+
     # Generate the frames from the video using ffmpeg
     src_video_file = os.path.join(gva_src, data_src, video_folder, f"{video_file}.{video_extn}")
     dst_frame_path = os.path.join(tmp_folder, video_folder, f"{video_file}_{frame_start}_{frame_end}")
@@ -292,5 +296,3 @@ def process_video(data_src, video_folder, video_file, video_extn, video_fps,
     
     return annotations 
 
-# Initialize the predictor globally
-predictor = initialize_sam() 
