@@ -1,10 +1,14 @@
 import os
+import shutil
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from PIL import Image
 import json
 from sam2.build_sam import build_sam2_video_predictor
+
+
+debug = False   # Set to True to enable debug mode, which will display the frames and annotations
 
 # Initialize device and model
 def initialize_sam():
@@ -180,9 +184,10 @@ def generate_video_frames_using_ffmeg(src_video_file, video_fps, frame_start, fr
 
 
 # Will apply SAM2 to annotate all frames given first frame annotation
-def get_annotations_from_video_frames(video_dir, frame_annotation, display_frames=False, vis_frame_stride = 5):
+def get_annotations_from_video_frames(video_dir, direction, frame_annotation, vis_frame_stride = 5):
     # `video_dir` a directory of JPEG frames with filenames like `<frame_index>.jpg`
-    
+    print(f"Use SAM2 to annotate the video frames in {video_dir}")
+
         
     # Initialize the predictor globally
     predictor = initialize_sam() 
@@ -209,14 +214,14 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
     inference_state = predictor.init_state(video_path=video_dir)
 
     # Now annotate first frame
-    ann_frame_idx = 0  # the frame index we interact with
+    ann_frame_idx = 0 if (direction == 'forward') else len(frame_names) - 1  # the frame index we interact with
     ann_obj_id = 0  # give a unique id to each object we interact with (it can be any integers)
     
     # Let's add a box at (x_min, y_min, x_max, y_max) e.g. (300, 0, 500, 400) to get started
     box = np.array(init_box, dtype=np.float32)
     
     # Generate the following frames from the first frame using SAM2
-    print('Generating frames from the first frame using SAM2')
+    print(f"Generating mask from the index frame ({ann_frame_idx}) using SAM2")
     _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
         inference_state=inference_state,
         frame_idx=ann_frame_idx,
@@ -228,7 +233,7 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
     first_frame_num = int(frame_names[0].split('.')[0])
 
     # show the results on the current (interacted) frame
-    if display_frames:
+    if debug:
         plt.figure(figsize=(12, 9))
         plt.title(f"frame {ann_frame_idx}")
         plt.imshow(Image.open(os.path.join(video_dir, frame_names[ann_frame_idx])))
@@ -238,7 +243,12 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
     # run propagation throughout the video and collect the results in a dict
     annotations = {}
 
-    for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state):
+    reverse = False if (direction == 'forward') else True
+
+    for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(
+        inference_state,
+        reverse=reverse,
+    ):
 
         out_mask = (out_mask_logits[0] > 0.0).cpu().numpy()
         
@@ -247,7 +257,7 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
         box = find_bounding_box(out_mask)
 
         # Display mask over base image
-        if display_frames & (frame_count % vis_frame_stride == 0):
+        if debug & (frame_count % vis_frame_stride == 0):
             plt.figure(figsize=(12, 9))
             plt.title(f"frame {frame_num} ({frame_count})")
             plt.imshow(Image.open(os.path.join(video_dir, frame_names[out_frame_idx])))
@@ -257,25 +267,28 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
         if box is not None:
             int_box = box.astype(np.int32).tolist()
             annotation = bounding_box_to_annotation(int_box, width, height, frame_annotation)
-            if display_frames & (frame_count % vis_frame_stride == 0):
+            if debug & (frame_count % vis_frame_stride == 0):
                 print('Frame: ', frame_num)
                 print('Box: ', int_box)
                 print('Annotation: ', annotation)
             annotations[frame_num] = annotation
 
-    # Reset the predictor as processing is complete
-    predictor.reset_state(inference_state)
+    # Garbage collect the predictor
+    predictor = None
 
     # Write the annotations dictionary to a JSON file
-    output_json_path = os.path.join(video_dir, 'annotations.json')
-    try:
-        with open(output_json_path, 'w') as json_file:
-            json.dump(annotations, json_file, indent=4)
-        print(f"Annotations successfully written to {output_json_path}")
+    if debug:
+        output_json_path = os.path.join(video_dir, 'annotations.json')
+        try:
+            with open(output_json_path, 'w') as json_file:
+                json.dump(annotations, json_file, indent=4)
+            print(f"Annotations successfully written to {output_json_path}")
 
-        return annotations
-    except IOError as e:
-        raise RuntimeError(f"Failed to write annotations to {output_json_path}: {e}")
+        except IOError as e:
+            raise RuntimeError(f"Failed to write annotations to {output_json_path}: {e}")
+        
+    return annotations
+
     
 
 
@@ -283,7 +296,7 @@ def get_annotations_from_video_frames(video_dir, frame_annotation, display_frame
 
 # Main processing functions
 def process_video(data_src, video_folder, video_file, video_extn, video_fps, 
-                 frame_start, frame_end, frame_annotation, gva_src, tmp_folder):
+                 frame_start, frame_end, direction, frame_annotation, gva_src, tmp_folder):
     """Main function to process video and generate annotations"""
 
     # Generate the frames from the video using ffmpeg
@@ -292,7 +305,12 @@ def process_video(data_src, video_folder, video_file, video_extn, video_fps,
     generate_video_frames_using_ffmeg(src_video_file, video_fps, frame_start, frame_end, dst_frame_path)
 
     # Get the annotations from the video frames
-    annotations = get_annotations_from_video_frames(dst_frame_path, frame_annotation)
-    
+    annotations = get_annotations_from_video_frames(dst_frame_path, direction, frame_annotation)
+    # annotations = {}
+
+    # Cleanup by removing the dst_frame_path folder
+    if not debug:
+        shutil.rmtree(dst_frame_path)
+
     return annotations 
 

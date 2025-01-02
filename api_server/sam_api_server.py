@@ -46,13 +46,14 @@ def process_data():
         video_fps = data.get('video_fps')
         frame_start = data.get('frame_start')
         frame_end = data.get('frame_end')
+        direction = data.get('direction')
         frame_annotation = data.get('frame_annotation')
 
         # Validate required parameters
         required_params = [
             'data_src', 'video_folder', 'video_file', 
             'video_extn', 'video_fps', 'frame_start', 'frame_end',
-            'frame_annotation'
+            'frame_annotation', 'direction'
         ]
         
         missing_params = [param for param in required_params if data.get(param) is None]
@@ -76,7 +77,7 @@ def process_data():
         print('Valid parameters. Processing the video and getting annotations now...')
         annotations = process_video(
             data_src, video_folder, video_file, video_extn,
-            video_fps, frame_start, frame_end, frame_annotation,
+            video_fps, frame_start, frame_end, direction, frame_annotation,
             gva_src, tmp_folder
         )
 
