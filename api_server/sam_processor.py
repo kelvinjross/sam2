@@ -8,7 +8,8 @@ import json
 from sam2.build_sam import build_sam2_video_predictor
 
 
-debug = False   # Set to True to enable debug mode, which will display the frames and annotations
+debug = True   # Set to True to enable debug mode, which will display the frames and annotations
+display_frames = False   # Set to True during debug mode, which will display the frames and annotations
 
 # Initialize device and model
 def initialize_sam():
@@ -235,7 +236,7 @@ def get_annotations_from_video_frames(video_dir, direction, frame_annotation, vi
     first_frame_num = int(frame_names[0].split('.')[0])
 
     # show the results on the current (interacted) frame
-    if debug:
+    if debug & display_frames:
         plt.figure(figsize=(12, 9))
         plt.title(f"frame {ann_frame_idx}")
         plt.imshow(Image.open(os.path.join(video_dir, frame_names[ann_frame_idx])))
@@ -259,7 +260,7 @@ def get_annotations_from_video_frames(video_dir, direction, frame_annotation, vi
         box = find_bounding_box(out_mask)
 
         # Display mask over base image
-        if debug & (frame_count % vis_frame_stride == 0):
+        if debug & display_frames & (frame_count % vis_frame_stride == 0):
             plt.figure(figsize=(12, 9))
             plt.title(f"frame {frame_num} ({frame_count})")
             plt.imshow(Image.open(os.path.join(video_dir, frame_names[out_frame_idx])))
