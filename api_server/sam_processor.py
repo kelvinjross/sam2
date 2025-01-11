@@ -158,10 +158,10 @@ def generate_video_frames_using_ffmeg(src_video_file, video_fps, frame_start, fr
     os.makedirs(dst_frame_path, exist_ok=True)
 
     # Setup ffmpeg command parameters
-    start_time = f"{(frame_start - 1) / video_fps}"
-    num_frames = f"{frame_end - frame_start + 1 + 1}"      # We add second +1 to account for ffmpeg -vframe repeats first frame
+    start_time = f"{(frame_start) / video_fps}"
+    num_frames = f"{frame_end - frame_start + 1}"      # We add second +1 to account for ffmpeg -vframe repeats first frame
     frame_rate = '"fps={}"'.format(video_fps)
-    start_number = f"{frame_start - 1}"                    # We -1 to account for ffmpeg -vframe repeats first frame
+    start_number = f"{frame_start}"                    # We -1 to account for ffmpeg -vframe repeats first frame
     # select_pattern = f"\"select=\'between(n,{frame_start},{frame_end})\'\""
     output_pattern = f"{dst_frame_path}/%05d.jpg"
 
