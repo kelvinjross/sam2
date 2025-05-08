@@ -4,7 +4,8 @@ from sam_processor import process_video
 
 app = Flask(__name__)
 
-gva_src = '/Users/kjr/Python/GeoVideoTagging/'
+# gva_src = '/Users/kjr/Python/GeoVideoTagging/'
+gva_src = '/Ext/'
 tmp_folder = '/tmp/SAM2/'
 
 

@@ -33,8 +33,9 @@ def initialize_sam():
               "give numerically different outputs and sometimes degraded performance on MPS. "
               "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion.")
 
-    sam2_checkpoint = "../checkpoints/sam2.1_hiera_large.pt"
-    model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+    # sam2_checkpoint = "../checkpoints/sam2.1_hiera_large.pt"  # /Users/kjr/Python/SegmentAnything/sam2/checkpoints
+    sam2_checkpoint = "python-server/checkpoints/sam2.1_hiera_large.pt"  # For deployment in docker
+    model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"    # /Users/kjr/Python/SegmentAnything/sam2
     # sam2_checkpoint = "../checkpoints/sam2.1_hiera_small.pt"
     # model_cfg = "configs/sam2.1/sam2.1_hiera_s.yaml"
     
